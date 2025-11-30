@@ -1,6 +1,6 @@
 Please use these credentials for login purposes
 admin id : admin@broto.com
-admin password : admin@broto.com
+admin password : admin123
 student id : johnhonai@gmail.com
 student password : john@2025
 # Welcome to your Lovable project
