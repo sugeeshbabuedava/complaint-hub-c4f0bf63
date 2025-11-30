@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -7,34 +7,54 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { ThemeToggle } from "@/components/ThemeToggle";
-import { addComplaint } from "@/lib/storage";
+import { addComplaint, getCurrentUser, generateComplaintId } from "@/lib/storage";
 import { COMPLAINT_CATEGORIES, COMPLAINT_PRIORITIES, ComplaintCategory, ComplaintPriority } from "@/lib/types";
 import { ArrowLeft, Upload } from "lucide-react";
 import { toast } from "sonner";
+import Header from "@/components/Header";
 
 const SubmitComplaint = () => {
   const navigate = useNavigate();
+  const currentUser = getCurrentUser();
+  
+  useEffect(() => {
+    if (!currentUser || currentUser.role !== "student") {
+      toast.error("Please login to submit a complaint");
+      navigate("/student/login");
+    }
+  }, [currentUser, navigate]);
+
   const [formData, setFormData] = useState({
     title: "",
     description: "",
     category: "" as ComplaintCategory,
     priority: "" as ComplaintPriority,
-    studentName: "",
-    studentEmail: "",
+    studentPhone: "",
     imageUrl: "",
   });
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (!formData.title || !formData.description || !formData.category || !formData.priority || !formData.studentName || !formData.studentEmail) {
+    if (!currentUser) {
+      toast.error("Please login first");
+      navigate("/student/login");
+      return;
+    }
+
+    if (!formData.title || !formData.description || !formData.category || !formData.priority) {
       toast.error("Please fill in all required fields");
       return;
     }
 
     const complaint = {
       id: Date.now().toString(),
+      complaintId: generateComplaintId(),
       ...formData,
+      studentId: currentUser.id,
+      studentName: currentUser.name,
+      studentEmail: currentUser.email,
+      studentProfileImage: currentUser.profileImage,
       status: "pending" as const,
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
@@ -43,7 +63,7 @@ const SubmitComplaint = () => {
 
     addComplaint(complaint);
     toast.success("Complaint submitted successfully!");
-    navigate("/complaint/" + complaint.id);
+    navigate("/student/dashboard");
   };
 
   const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -57,26 +77,31 @@ const SubmitComplaint = () => {
     }
   };
 
+  if (!currentUser) {
+    return null;
+  }
+
   return (
-    <div className="min-h-screen bg-gradient-to-br from-background via-background to-primary/5">
-      <div className="absolute top-4 right-4">
+    <div className="min-h-screen bg-gradient-to-br from-background via-background to-accent/5">
+      <Header />
+      <div className="absolute top-20 right-4">
         <ThemeToggle />
       </div>
 
       <div className="container mx-auto px-4 py-8">
         <Button
           variant="ghost"
-          className="mb-6"
-          onClick={() => navigate("/")}
+          className="mb-6 group"
+          onClick={() => navigate("/student/dashboard")}
         >
-          <ArrowLeft className="h-4 w-4 mr-2" />
-          Back to Home
+          <ArrowLeft className="h-4 w-4 mr-2 group-hover:-translate-x-1 transition-transform" />
+          Back to Dashboard
         </Button>
 
-        <Card className="max-w-2xl mx-auto">
+        <Card className="max-w-2xl mx-auto animate-fade-in border-accent/20">
           <CardHeader>
             <CardTitle className="text-3xl">Submit a Complaint</CardTitle>
-            <CardDescription>
+            <CardDescription className="text-base">
               Fill in the details below to submit your complaint. Our staff will review and respond promptly.
             </CardDescription>
           </CardHeader>
@@ -84,26 +109,39 @@ const SubmitComplaint = () => {
             <form onSubmit={handleSubmit} className="space-y-6">
               <div className="grid md:grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <Label htmlFor="studentName">Your Name *</Label>
+                  <Label htmlFor="studentName">Your Name</Label>
                   <Input
                     id="studentName"
-                    value={formData.studentName}
-                    onChange={(e) => setFormData({ ...formData, studentName: e.target.value })}
-                    placeholder="John Doe"
-                    required
+                    value={currentUser.name}
+                    disabled
+                    className="bg-muted"
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="studentEmail">Your Email *</Label>
+                  <Label htmlFor="studentEmail">Your Email</Label>
                   <Input
                     id="studentEmail"
                     type="email"
-                    value={formData.studentEmail}
-                    onChange={(e) => setFormData({ ...formData, studentEmail: e.target.value })}
-                    placeholder="john@example.com"
-                    required
+                    value={currentUser.email}
+                    disabled
+                    className="bg-muted"
                   />
                 </div>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="studentPhone">Phone Number (Optional)</Label>
+                <Input
+                  id="studentPhone"
+                  type="tel"
+                  value={formData.studentPhone}
+                  onChange={(e) => setFormData({ ...formData, studentPhone: e.target.value })}
+                  placeholder="+91 9876543210"
+                  className="text-base"
+                />
+                <p className="text-sm text-muted-foreground">
+                  Provide your phone number to receive WhatsApp updates
+                </p>
               </div>
 
               <div className="space-y-2">

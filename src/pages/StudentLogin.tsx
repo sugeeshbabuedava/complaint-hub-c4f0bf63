@@ -1,38 +1,23 @@
-import { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import { useState } from "react";
+import { useNavigate, Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { ThemeToggle } from "@/components/ThemeToggle";
-import { getUserByEmail, setCurrentUser, addUser } from "@/lib/storage";
-import { Shield, ArrowLeft } from "lucide-react";
+import { getUserByEmail, setCurrentUser } from "@/lib/storage";
+import { ArrowLeft, LogIn } from "lucide-react";
 import { toast } from "sonner";
 import Header from "@/components/Header";
 import LoadingAnimation from "@/components/LoadingAnimation";
 
-const AdminLogin = () => {
+const StudentLogin = () => {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
   const [formData, setFormData] = useState({
     email: "",
     password: "",
   });
-
-  // Initialize admin account if it doesn't exist
-  useEffect(() => {
-    const adminUser = getUserByEmail("admin@broto.com");
-    if (!adminUser) {
-      addUser({
-        id: "admin-default",
-        email: "admin@broto.com",
-        password: "admin123",
-        name: "Admin",
-        role: "admin",
-        createdAt: new Date().toISOString(),
-      });
-    }
-  }, []);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -44,30 +29,31 @@ const AdminLogin = () => {
 
     setLoading(true);
 
+    // Simulate loading delay for better UX
     setTimeout(() => {
       const user = getUserByEmail(formData.email);
 
       if (!user) {
-        toast.error("Invalid credentials");
+        toast.error("No account found with this email");
         setLoading(false);
         return;
       }
 
       if (user.password !== formData.password) {
-        toast.error("Invalid credentials");
+        toast.error("Incorrect password");
         setLoading(false);
         return;
       }
 
-      if (user.role !== "admin") {
-        toast.error("Unauthorized access");
+      if (user.role !== "student") {
+        toast.error("Please use the admin login page");
         setLoading(false);
         return;
       }
 
       setCurrentUser(user);
-      toast.success("Welcome, Admin!");
-      navigate("/admin/dashboard");
+      toast.success("Welcome back, " + user.name + "!");
+      navigate("/student/dashboard");
     }, 1500);
   };
 
@@ -95,11 +81,11 @@ const AdminLogin = () => {
         <Card className="max-w-md mx-auto animate-fade-in border-accent/20">
           <CardHeader className="text-center">
             <div className="mx-auto mb-4 w-16 h-16 bg-accent/10 rounded-full flex items-center justify-center">
-              <Shield className="h-8 w-8 text-accent" />
+              <LogIn className="h-8 w-8 text-accent" />
             </div>
-            <CardTitle className="text-3xl">Admin Access</CardTitle>
+            <CardTitle className="text-3xl">Student Login</CardTitle>
             <CardDescription className="text-base">
-              Enter your credentials to access the admin dashboard
+              Access your complaints dashboard
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -111,7 +97,7 @@ const AdminLogin = () => {
                   type="email"
                   value={formData.email}
                   onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                  placeholder="admin@example.com"
+                  placeholder="your.email@example.com"
                   required
                   className="text-base"
                 />
@@ -131,9 +117,18 @@ const AdminLogin = () => {
               </div>
 
               <Button type="submit" className="w-full" size="lg">
-                <Shield className="h-5 w-5 mr-2" />
-                Login as Admin
+                <LogIn className="h-5 w-5 mr-2" />
+                Login
               </Button>
+
+              <div className="text-center pt-4 border-t">
+                <p className="text-sm text-muted-foreground">
+                  Don't have an account?{" "}
+                  <Link to="/student/signup" className="text-accent hover:underline font-semibold">
+                    Sign up here
+                  </Link>
+                </p>
+              </div>
             </form>
           </CardContent>
         </Card>
@@ -142,4 +137,4 @@ const AdminLogin = () => {
   );
 };
 
-export default AdminLogin;
+export default StudentLogin;
