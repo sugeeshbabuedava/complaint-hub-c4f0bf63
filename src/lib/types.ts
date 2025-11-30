@@ -2,16 +2,30 @@ export type ComplaintStatus = "pending" | "in_review" | "assigned" | "resolved" 
 export type ComplaintPriority = "low" | "medium" | "high" | "urgent";
 export type ComplaintCategory = "infrastructure" | "facilities" | "academic" | "administration" | "other";
 
+export interface User {
+  id: string;
+  email: string;
+  password: string;
+  name: string;
+  role: "student" | "admin";
+  profileImage?: string;
+  createdAt: string;
+}
+
 export interface Complaint {
   id: string;
+  complaintId: string;
   title: string;
   description: string;
   category: ComplaintCategory;
   priority: ComplaintPriority;
   status: ComplaintStatus;
-  imageUrl?: string;
+  studentId: string;
   studentName: string;
   studentEmail: string;
+  studentPhone?: string;
+  studentProfileImage?: string;
+  imageUrl?: string;
   createdAt: string;
   updatedAt: string;
   notes: ComplaintNote[];
